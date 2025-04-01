@@ -1,0 +1,52 @@
+---
+title: "PEC1"
+author: "LFD"
+date: "2025-04-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "../") 
+```
+
+Importamos nuestra base de datos como human_cachexia y vemos en qué consiste 
+```{r}
+library(readr)
+human_cachexia <- read_csv("data/human_cachexia.csv")
+head(human_cachexia)
+names(human_cachexia)
+length(human_cachexia)
+summary(human_cachexia)
+str(human_cachexia)
+```
+
+Hacemos el apartado 2: crear un objeto de clase con los datos del dataframe.
+Tenemos dos identificadores, el Id de paciente y la categoría de pérdida de músculo: control o caquéctico
+```{r}
+library(SummarizedExperiment)
+#Pasamos los datos a una matriz desde la tercera columna
+#Las dos primeras columnas son identificadores
+counts <- as.matrix(human_cachexia[,3:ncol(human_cachexia)])
+colData <- DataFrame(
+  PatientID = human_cachexia$`Patient ID`,
+  MuscleLoss = human_cachexia$`Muscle loss`
+)
+
+#Trasponemos la matriz ya que las features tienen que estar en filas y las samples en columns
+counts_t <- t(counts)
+
+#Las features serán los distintos metabolitos
+rownames(counts_t) <- colnames(counts)
+rowData <- DataFrame(metabolite = rownames(counts_t))
+
+
+#Creamos el SummarizedExperiment
+se <- SummarizedExperiment(assays=list(counts=counts_t),
+                     rowData = rowData, colData=colData)
+
+#Guardamos el resultado
+save(se, file = "objetos/summarized_experiment.Rda")
+
+```
+
