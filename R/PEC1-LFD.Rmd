@@ -50,3 +50,68 @@ save(se, file = "objetos/summarized_experiment.Rda")
 
 ```
 
+Visualización de los datos
+```{r}
+library(dplyr)
+#Matriz de expresión
+expr <- assay(se)
+
+#comprobamos que no hay columnas vacías o no numéricas
+anyNA(expr)
+is_numeric <- sapply(expr, is.numeric)
+all(is_numeric)
+
+#Separamos los controles de los enfermos
+grupo <- colData(se)$MuscleLoss
+
+#Lo ordenamos para comparar ambos grupos
+orden <- order(grupo)
+expr_ordenado <- expr[, orden]
+grupo_ordenado <- grupo[orden]
+
+```
+
+
+```{r heatmap, fig.width=10, fig.height=12}
+#Usamos sclae=row para comparar entre las muestras
+cachexia_heatmap <- heatmap(expr_ordenado,Rowv=NA, Colv=NA, col=heat.colors(16), scale="row", margins=c(10,15), labCol = grupo_ordenado )
+
+```
+
+No sé ve una clara diferencia entre controles y pacientes en base a los metabolitos. 
+
+
+Hacemos ahora un análisis de Componentes Principales (PCA)
+```{r}
+#ahora necesitamos intercambiar otra vez filas y columnas
+expr_t <- t(expr) 
+
+#scale = TRUE para escalar las variables para que tengan desviación estándar igual a 1
+pca <- prcomp(expr_t, scale. = TRUE)  
+
+```
+
+
+```{r}
+#Visualización del PCA
+library(factoextra)
+
+#coloremos por el gurpo definido antes para ver pacientes vs controles
+
+fviz_pca_ind(pca, geom.ind = "point", 
+             col.ind = grupo, 
+             axes = c(1, 2), palette = c("lightblue", "orange"), 
+             addEllipses = TRUE,
+             legend.title = "Grupo", repel = FALSE,
+             pointsize = 2) 
+
+# Dibujar las dos primeras componentes
+plot(pca$x[, 1:2],
+     col = ifelse(grupo == "cachexic", "red", "blue"),
+     xlab = "PC1", ylab = "PC2", pch=19,
+     main = "PCA") 
+legend("topright", legend = c("Cachexic", "Control"), col = c("red", "blue"), pch=19)
+
+```
+
+
